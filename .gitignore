@@ -112,3 +112,5 @@ build/*
 /Source/Oculus.Dashboard/State/StateStore
 
 settings\.json
+
+Source/SqlToAzure/Settings\.cs
