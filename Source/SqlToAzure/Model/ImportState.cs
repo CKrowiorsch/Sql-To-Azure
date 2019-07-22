@@ -17,7 +17,7 @@ namespace Krowiorsch.Model
 
         public DateTimeOffset MaxDate { get; set; }
 
-        public DateTime? LastProcessedTimestamp { get; set; }
+        public long LastProcessedPosition { get; set; } = 0L;
 
         public static class KnownStatus
         {

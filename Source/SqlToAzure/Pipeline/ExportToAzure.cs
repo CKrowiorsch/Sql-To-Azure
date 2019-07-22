@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data.SqlTypes;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Dapper;
 using Krowiorsch.Impl;
@@ -45,22 +46,42 @@ namespace Krowiorsch.Pipeline
 
         public async Task Execute()
         {
-            DynamicObjectTableEntity[] databaseObjects; //= await ReadSqlAndConvert(_currentState);
-            while ((databaseObjects = await ReadSqlAndConvert(_currentState)).Any())
+            DynamicTableEntity[] databaseObjects; //= await ReadSqlAndConvert(_currentState);
+            long maxTimestamp;
+            (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState);
+            while (databaseObjects.Any())
             {
+                Transform(databaseObjects);
+
                 await PushToAzure(databaseObjects);
 
-                var minTimestamp = databaseObjects.Min(t => t.ProcessCursorPoint);
-                _currentState.LastProcessedTimestamp = minTimestamp;
+                _currentState.LastProcessedPosition = maxTimestamp;
 
                 await _stateStore.UpdateImportState(_currentState);
 
                 Serilog.Log.Information("{count} Einträge übertragen", databaseObjects.Length);
+
+                (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState);
             }
 
         }
 
-        async Task PushToAzure(DynamicObjectTableEntity[] entities)
+        void Transform(DynamicTableEntity[] entities)
+        {
+            foreach (var entity in entities)
+            {
+                for (int i = 0; i < entity.Properties.Count; i++)
+                {
+                    var prop = entity.Properties.ElementAt(i);
+                    if (prop.Value.PropertyType == EdmType.String && prop.Value.StringValue.Length > 32000)
+                    {
+                        entity.Properties[prop.Key] = new EntityProperty(prop.Value.StringValue.Substring(0, 31999));
+                    }
+                }
+            }
+        }
+
+        async Task PushToAzure(DynamicTableEntity[] entities)
         {
             var operations = new TableBatchOperation();
 
@@ -79,36 +100,35 @@ namespace Krowiorsch.Pipeline
                 await _table.ExecuteBatchAsync(operations);
         }
 
-        async Task<DynamicObjectTableEntity[]> ReadSqlAndConvert(ImportState state)
+        async Task<(DynamicTableEntity[], long)> ReadSqlAndConvert(ImportState state)
         {
             using (var connection = new SqlConnection(_settings.SqlServerConnection))
             {
-                var statement = SqlBuilder.BuildSelect(_settings.SqlTableName, _settings.DateColumn, _settings.IdColumn, 500);
+                var statement = SqlBuilder.BuildSelect(_settings.SqlTableName, _settings.TimestampColumn, 1);
 
-                var resultsDatabase = (await connection.QueryAsync<dynamic>(statement, new { Date = state.MaxDate, currentTimestamp = state.LastProcessedTimestamp ?? (DateTime)SqlDateTime.MinValue }, commandTimeout: 600)).ToArray();
+                var resultsDatabase = (await connection.QueryAsync<dynamic>(statement, new { cursor = state.LastProcessedPosition }, commandTimeout: 600)).ToArray();
 
-                var resultList = new List<DynamicObjectTableEntity>();
+                var resultList = new List<DynamicTableEntity>();
+
+                long maxTimestamp = 0L;
 
                 foreach (var result in resultsDatabase)
                 {
                     var resolved = (Dictionary<string, object>)DynamicHelper.ToDictionary(result);
 
                     var rowKey = _rowKeyNormalizer.ToRowKeyValue(resolved[_settings.IdColumn].ToString());
-                    var entity = new DynamicObjectTableEntity("default", rowKey);
-                    entity.ProcessCursorPoint = (DateTime)resolved[_settings.DateColumn];
 
-                    foreach (var entry in resolved)
-                    {
-                        if (entry.Key.Equals(_settings.IdColumn, StringComparison.OrdinalIgnoreCase))
-                            continue;
+                    maxTimestamp = Math.Max(maxTimestamp, (long)resolved["TimestampAsLong"]);
 
-                        entity.AddValue(entry.Key, entry.Value);
-                    }
+                    var t1 = resolved
+                        .Where(t => t.Key.Equals("TimestampAsLong", StringComparison.OrdinalIgnoreCase))
+                        .ToDictionary(t => t.Key, t => EntityProperty.CreateEntityPropertyFromObject(t.Value));
 
+                    var entity = new DynamicTableEntity("default", rowKey, "*", t1);
                     resultList.Add(entity);
                 }
 
-                return resultList.ToArray();
+                return (resultList.ToArray(), maxTimestamp);
             }
         }
     }

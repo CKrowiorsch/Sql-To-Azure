@@ -2,9 +2,9 @@
 {
     public static class SqlBuilder
     {
-        public static string BuildSelect(string tableName, string dateColumn,  string idColumn, int batchsize)
+        public static string BuildSelect(string tableName, string timestampColumn = "Timestamp", int batchsize = 500)
         {
-            return $"SELECT TOP {batchsize} * FROM {tableName} WHERE {dateColumn} < @date AND {dateColumn} >= @currentTimestamp ORDER BY {dateColumn} ASC";
+            return $"SELECT TOP {batchsize} CONVERT(bigint, {timestampColumn}) as TimestampAsLong,  * FROM {tableName} WHERE {timestampColumn} > Convert(timestamp,Convert(bigint, @cursor)) ORDER BY {timestampColumn} ASC";
         }
     }
 }
