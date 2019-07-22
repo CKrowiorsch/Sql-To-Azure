@@ -8,7 +8,7 @@ namespace Krowiorsch.Model
         {
             Identifier = identifier;
             Status = KnownStatus.Created;
-            LastProcessedTimestamp = MaxDate = maxDate;
+            MaxDate = maxDate;
         }
 
         public string Identifier { get; set; }
@@ -17,7 +17,7 @@ namespace Krowiorsch.Model
 
         public DateTimeOffset MaxDate { get; set; }
 
-        public DateTimeOffset? LastProcessedTimestamp { get; set; }
+        public DateTime? LastProcessedTimestamp { get; set; }
 
         public static class KnownStatus
         {

@@ -11,6 +11,8 @@ using Krowiorsch.Model;
 using Krowiorsch.Pipeline;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
+using Serilog;
+using Serilog.Sinks.SystemConsole.Themes;
 using SqlToAzure.Helper;
 
 namespace SqlToAzure
@@ -19,6 +21,10 @@ namespace SqlToAzure
     {
         static void Main(string[] args)
         {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console(theme: AnsiConsoleTheme.Code)
+                .CreateLogger();
+
             var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
 
             IRowKeyNormalizer rowKeyNormalizer = new ReplaceCharacterRowKeyNormalizer();

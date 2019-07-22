@@ -28,6 +28,8 @@ namespace Krowiorsch.Model
         // Use this Dictionary store table's properties. 
         public IDictionary<string, EntityProperty> Properties { get; private set; }
 
+        public DateTime ProcessCursorPoint { get; set; }
+
         public DynamicObjectTableEntity()
         {
             Properties = new Dictionary<string, EntityProperty>();
