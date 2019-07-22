@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data.SqlTypes;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Dapper;
 using Krowiorsch.Impl;
 using Krowiorsch.Model;
+using Krowiorsch.Pipeline.Transformers;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using SqlToAzure;
@@ -17,7 +19,8 @@ namespace Krowiorsch.Pipeline
 {
     public class ExportToAzure
     {
-        const int MaxAzureOperations = 100;
+        const int MaxAzureOperations = 100;                     // the limit of the azure tablebatchoperation
+        const int SqlBatchSize = 500;
 
         readonly IRowKeyNormalizer _rowKeyNormalizer = new ReplaceCharacterRowKeyNormalizer();
 
@@ -51,6 +54,7 @@ namespace Krowiorsch.Pipeline
             (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState);
             while (databaseObjects.Any())
             {
+                var duration = Stopwatch.StartNew();
                 Transform(databaseObjects);
 
                 await PushToAzure(databaseObjects);
@@ -59,7 +63,7 @@ namespace Krowiorsch.Pipeline
 
                 await _stateStore.UpdateImportState(_currentState);
 
-                Serilog.Log.Information("{count} Einträge übertragen", databaseObjects.Length);
+                Serilog.Log.Information("{count} Einträge übertragen (Dauer: {duration} ms)", databaseObjects.Length, duration.ElapsedMilliseconds);
 
                 (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState);
             }
@@ -68,16 +72,20 @@ namespace Krowiorsch.Pipeline
 
         void Transform(DynamicTableEntity[] entities)
         {
+            var transformer = new PropertySizeTransformer();
+
             foreach (var entity in entities)
             {
-                for (int i = 0; i < entity.Properties.Count; i++)
-                {
-                    var prop = entity.Properties.ElementAt(i);
-                    if (prop.Value.PropertyType == EdmType.String && prop.Value.StringValue.Length > 32000)
-                    {
-                        entity.Properties[prop.Key] = new EntityProperty(prop.Value.StringValue.Substring(0, 31999));
-                    }
-                }
+                transformer.Transform(entity);
+
+                //for (int i = 0; i < entity.Properties.Count; i++)
+                //{
+                //    var prop = entity.Properties.ElementAt(i);
+                //    if (prop.Value.PropertyType == EdmType.String && prop.Value.StringValue.Length > 32000)
+                //    {
+                //        entity.Properties[prop.Key] = new EntityProperty(prop.Value.StringValue.Substring(0, 31999));
+                //    }
+                //}
             }
         }
 
@@ -104,13 +112,13 @@ namespace Krowiorsch.Pipeline
         {
             using (var connection = new SqlConnection(_settings.SqlServerConnection))
             {
-                var statement = SqlBuilder.BuildSelect(_settings.SqlTableName, _settings.TimestampColumn, 1);
+                var statement = SqlBuilder.BuildSelect(_settings.SqlTableName, _settings.TimestampColumn, SqlBatchSize);
 
                 var resultsDatabase = (await connection.QueryAsync<dynamic>(statement, new { cursor = state.LastProcessedPosition }, commandTimeout: 600)).ToArray();
 
                 var resultList = new List<DynamicTableEntity>();
 
-                long maxTimestamp = 0L;
+                var maxTimestamp = 0L;
 
                 foreach (var result in resultsDatabase)
                 {
@@ -121,7 +129,7 @@ namespace Krowiorsch.Pipeline
                     maxTimestamp = Math.Max(maxTimestamp, (long)resolved["TimestampAsLong"]);
 
                     var t1 = resolved
-                        .Where(t => t.Key.Equals("TimestampAsLong", StringComparison.OrdinalIgnoreCase))
+                        .Where(t => !t.Key.Equals("TimestampAsLong", StringComparison.OrdinalIgnoreCase))
                         .ToDictionary(t => t.Key, t => EntityProperty.CreateEntityPropertyFromObject(t.Value));
 
                     var entity = new DynamicTableEntity("default", rowKey, "*", t1);

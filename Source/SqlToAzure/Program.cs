@@ -37,7 +37,7 @@ namespace SqlToAzure
             Console.WriteLine($"Azure: {settings.AzureConnection}");
 
             var pipeline = new ExportToAzure(settings);
-            pipeline.InitializePipeline("analysetest", olderThan).Wait();
+            pipeline.InitializePipeline(settings.AzureTableName, olderThan).Wait();
             pipeline.Execute().Wait();
         }
     }
