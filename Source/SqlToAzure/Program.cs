@@ -6,6 +6,8 @@ using System.Dynamic;
 using System.IO;
 using System.Linq;
 using Dapper;
+using Krowiorsch.Impl;
+using Krowiorsch.Model;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using SqlToAzure.Helper;
@@ -23,6 +25,8 @@ namespace SqlToAzure
             var settings = Settings.ReadFromFile(filePath);
 
             var olderThan = DateTime.Today.Subtract(TimeSpan.FromDays(720));
+
+
 
             Console.WriteLine("Hello World!");
             Console.WriteLine($"Azure: {settings.AzureConnection}");
