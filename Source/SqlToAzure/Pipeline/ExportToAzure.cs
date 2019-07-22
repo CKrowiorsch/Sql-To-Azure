@@ -50,12 +50,11 @@ namespace Krowiorsch.Pipeline
         {
             var duration = Stopwatch.StartNew();
 
-            DynamicTableEntity[] databaseObjects; //= await ReadSqlAndConvert(_currentState);
+            DynamicTableEntity[] databaseObjects; 
             long maxTimestamp;
             (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState);
             while (databaseObjects.Any())
             {
-                
                 Transform(databaseObjects);
 
                 await PushToAzure(databaseObjects);
@@ -64,7 +63,10 @@ namespace Krowiorsch.Pipeline
 
                 await _stateStore.UpdateImportState(_currentState);
 
-                Serilog.Log.Information("{count} Einträge übertragen (Dauer: {duration} ms)", databaseObjects.Length, duration.ElapsedMilliseconds);
+                Serilog.Log.Information("{count} Entries transferred (Duration: {duration} ms) - TS:{Timestamp}", 
+                    databaseObjects.Length, 
+                    duration.ElapsedMilliseconds, 
+                    _currentState.LastProcessedPosition);
 
                 duration.Restart();
                 (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState);
@@ -79,15 +81,6 @@ namespace Krowiorsch.Pipeline
             foreach (var entity in entities)
             {
                 transformer.Transform(entity);
-
-                //for (int i = 0; i < entity.Properties.Count; i++)
-                //{
-                //    var prop = entity.Properties.ElementAt(i);
-                //    if (prop.Value.PropertyType == EdmType.String && prop.Value.StringValue.Length > 32000)
-                //    {
-                //        entity.Properties[prop.Key] = new EntityProperty(prop.Value.StringValue.Substring(0, 31999));
-                //    }
-                //}
             }
         }
 
@@ -95,7 +88,7 @@ namespace Krowiorsch.Pipeline
         {
             var operations = new TableBatchOperation();
 
-            for (int i = 0; i < entities.Length; i++)
+            for (var i = 0; i < entities.Length; i++)
             {
                 operations.Add(TableOperation.InsertOrReplace(entities[i]));
 
@@ -130,11 +123,11 @@ namespace Krowiorsch.Pipeline
 
                     maxTimestamp = Math.Max(maxTimestamp, (long)resolved["TimestampAsLong"]);
 
-                    var t1 = resolved
-                        .Where(t => !t.Key.Equals("TimestampAsLong", StringComparison.OrdinalIgnoreCase))
+                    var properties = resolved
+                        .Where(t => !t.Key.Equals("TimestampAsLong", StringComparison.OrdinalIgnoreCase))           // virtual Column not needed
                         .ToDictionary(t => t.Key, t => EntityProperty.CreateEntityPropertyFromObject(t.Value));
 
-                    var entity = new DynamicTableEntity("default", rowKey, "*", t1);
+                    var entity = new DynamicTableEntity("default", rowKey, "*", properties);
                     resultList.Add(entity);
                 }
 
