@@ -1,29 +1,10 @@
-﻿/***************************** Module Header ******************************\
-* Module Name:	DynamicObjectTableEntity.cs
-* Project:		CSAzureDynamicTableEntity
-* Copyright (c) Microsoft Corporation.
-* 
-* This sample shows how to define properties at the run time which will be 
-* added to the table when inserting the entities.
-* Windows Azure table has flexible schema, so we needn't to define an entity 
-* class to serialize the entity.
-* 
-* This source is subject to the Microsoft Public License.
-* See http://www.microsoft.com/en-us/openness/licenses.aspx#MPL.
-* All other rights reserved.
-* 
-* THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, 
-* EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED 
-* WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
-\**************************************************************************/
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 
-namespace SqlToAzure
+namespace Krowiorsch.Model
 {
     public class DynamicObjectTableEntity : DynamicObject, ITableEntity
     {

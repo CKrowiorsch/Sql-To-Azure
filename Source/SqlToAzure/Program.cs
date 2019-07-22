@@ -8,6 +8,7 @@ using System.Linq;
 using Dapper;
 using Krowiorsch.Impl;
 using Krowiorsch.Model;
+using Krowiorsch.Pipeline;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using SqlToAzure.Helper;
@@ -26,10 +27,14 @@ namespace SqlToAzure
 
             var olderThan = DateTime.Today.Subtract(TimeSpan.FromDays(720));
 
-
-
             Console.WriteLine("Hello World!");
             Console.WriteLine($"Azure: {settings.AzureConnection}");
+
+            var pipeline = new ExportToAzure(settings);
+            pipeline.InitializePipeline("analysetest", olderThan).Wait();
+            pipeline.Execute().Wait();
+
+            return;
 
             using (var connection = new SqlConnection(settings.SqlServerConnection))
             {
@@ -37,7 +42,7 @@ namespace SqlToAzure
 
                 dynamic[] resultsDatabase = connection.Query<dynamic>(statement, new { Date = olderThan }).ToArray();
 
-                Console.Write($"Count:{resultsDatabase.Count()}");
+                Console.Write($"Count:{resultsDatabase.Length}");
 
                 CloudStorageAccount storageAccount = CloudStorageAccount.Parse(settings.AzureConnection);
                 var client = storageAccount.CreateCloudTableClient();
