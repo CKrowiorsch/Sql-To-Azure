@@ -1,4 +1,4 @@
-﻿namespace SqlToAzure
+﻿namespace Krowiorsch
 {
     public static class SqlBuilder
     {

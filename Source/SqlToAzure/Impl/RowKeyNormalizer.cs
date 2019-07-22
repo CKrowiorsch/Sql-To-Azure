@@ -1,4 +1,4 @@
-﻿namespace SqlToAzure
+﻿namespace Krowiorsch.Impl
 {
     public interface IRowKeyNormalizer
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
-namespace SqlToAzure.Helper
+namespace Krowiorsch.Helper
 {
     static class DynamicHelper
     {

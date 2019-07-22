@@ -21,14 +21,13 @@ namespace Krowiorsch.Impl
 
     class AzureBlobStateStore : IStateStore
     {
-        readonly CloudBlobClient _client;
         readonly CloudBlobContainer _settingsContainer;
 
         public AzureBlobStateStore(string azureConnection)
         {
             var storageAccount = CloudStorageAccount.Parse(azureConnection);
-            _client = storageAccount.CreateCloudBlobClient();
-            _settingsContainer = _client.GetContainerReference("importstate");
+            var client = storageAccount.CreateCloudBlobClient();
+            _settingsContainer = client.GetContainerReference("importstate");
         }
 
         public async Task<ImportState> ByIdentifier(string identifier)

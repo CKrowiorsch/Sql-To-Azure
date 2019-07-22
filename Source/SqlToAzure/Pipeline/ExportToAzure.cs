@@ -1,19 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Dapper;
+using Krowiorsch.Helper;
 using Krowiorsch.Impl;
 using Krowiorsch.Model;
 using Krowiorsch.Pipeline.Transformers;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
-using SqlToAzure;
-using SqlToAzure.Helper;
 
 namespace Krowiorsch.Pipeline
 {
@@ -45,16 +42,20 @@ namespace Krowiorsch.Pipeline
             var client = _storageAccount.CreateCloudTableClient();
             _table = client.GetTableReference(_settings.AzureTableName);
             await _table.CreateIfNotExistsAsync();
+
+            Serilog.Log.Information("Pipeline für Identifier: {identifier} gestartet", identifier);
         }
 
         public async Task Execute()
         {
+            var duration = Stopwatch.StartNew();
+
             DynamicTableEntity[] databaseObjects; //= await ReadSqlAndConvert(_currentState);
             long maxTimestamp;
             (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState);
             while (databaseObjects.Any())
             {
-                var duration = Stopwatch.StartNew();
+                
                 Transform(databaseObjects);
 
                 await PushToAzure(databaseObjects);
@@ -65,6 +66,7 @@ namespace Krowiorsch.Pipeline
 
                 Serilog.Log.Information("{count} Einträge übertragen (Dauer: {duration} ms)", databaseObjects.Length, duration.ElapsedMilliseconds);
 
+                duration.Restart();
                 (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState);
             }
 
