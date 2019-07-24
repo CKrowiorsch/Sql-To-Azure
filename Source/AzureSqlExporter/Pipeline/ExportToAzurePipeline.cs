@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Dapper;
 using Krowiorsch.AzureSqlExporter.Helper;
 using Krowiorsch.AzureSqlExporter.Impl;
 using Krowiorsch.AzureSqlExporter.Model;
@@ -114,10 +112,14 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
         {
             var statement = SqlBuilder.BuildSelect(_settings.SqlTableName, _settings.TimestampColumn, SqlBatchSize);
 
-            var resultsDatabase = await ReadFromSql(statement, _settings.SqlServerConnection, new Dictionary<string, object>
+            Dictionary<string, object>[] resultsDatabase;
+            using (var connection = new SqlConnection(_settings.SqlServerConnection))
             {
-                {"cursor", state.LastProcessedPosition }
-            });
+                resultsDatabase = await connection.QueryAsync(statement, new Dictionary<string, object>
+                {
+                    {"cursor", state.LastProcessedPosition }
+                });
+            }
 
             var resultList = new List<DynamicTableEntity>();
 
@@ -140,51 +142,6 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
             return (resultList.ToArray(), maxTimestamp);
         }
 
-        async Task<Dictionary<string, object>[]> ReadFromSql(string sqlStatement, string sqlConnection, Dictionary<string, object> parameters)
-        {
-            var results = new List<Dictionary<string, object>>();
-
-            using (var connection = new SqlConnection(sqlConnection))
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = sqlStatement;
-                command.CommandTimeout = 600;
-
-                foreach (var parameter in parameters)
-                {
-                    var p = command.Parameters.Add(parameter.Key, SqlHelper.GetDbType(parameter.Value.GetType()));
-                    p.Value = parameter.Value;
-                }
-
-                await connection.OpenAsync();
-
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    if (!reader.HasRows)
-                        return new Dictionary<string, object>[0];
-
-                    while (reader.Read())
-                    {
-                        results.Add(ReadRow(reader));
-                    }
-                }
-            }
-
-            return results.ToArray();
-        }
-
-        Dictionary<string, object> ReadRow(SqlDataReader reader)
-        {
-            var columns = reader.GetColumnSchema();
-
-            var result = new Dictionary<string, object>();
-
-            foreach (var column in columns)
-            {
-                result.Add(column.ColumnName, reader.GetValue(reader.GetOrdinal(column.ColumnName)));
-            }
-
-            return result;
-        }
+        
     }
 }

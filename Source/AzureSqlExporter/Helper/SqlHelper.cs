@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
+using System.Data.SqlClient;
+using System.Threading.Tasks;
 
 namespace Krowiorsch.AzureSqlExporter.Helper
 {
     public static class SqlHelper
     {
-        private static Dictionary<Type, SqlDbType> typeMap;
+        static Dictionary<Type, SqlDbType> typeMap;
 
         // Create and populate the dictionary in the static constructor
         static SqlHelper()
@@ -47,6 +50,55 @@ namespace Krowiorsch.AzureSqlExporter.Helper
         public static SqlDbType GetDbType<T>()
         {
             return GetDbType(typeof(T));
+        }
+
+        public static async Task<Dictionary<string, object>[]> QueryAsync(this SqlConnection connection, 
+            string sqlStatement,
+            Dictionary<string, object> parameters)
+        {
+            if (connection.State != ConnectionState.Open)
+                await connection.OpenAsync();
+
+            var results = new List<Dictionary<string, object>>();
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = sqlStatement;
+                command.CommandTimeout = 600;
+
+                foreach (var parameter in parameters)
+                {
+                    var p = command.Parameters.Add(parameter.Key, SqlHelper.GetDbType(parameter.Value.GetType()));
+                    p.Value = parameter.Value;
+                }
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (!reader.HasRows)
+                        return new Dictionary<string, object>[0];
+
+                    while (reader.Read())
+                    {
+                        results.Add(ReadRow(reader));
+                    }
+                }
+            }
+
+            return results.ToArray();
+        }
+
+        static Dictionary<string, object> ReadRow(SqlDataReader reader)
+        {
+            var columns = reader.GetColumnSchema();
+
+            var result = new Dictionary<string, object>();
+
+            foreach (var column in columns)
+            {
+                result.Add(column.ColumnName, reader.GetValue(reader.GetOrdinal(column.ColumnName)));
+            }
+
+            return result;
         }
     }
 }
