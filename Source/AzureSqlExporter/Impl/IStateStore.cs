@@ -3,12 +3,12 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Krowiorsch.Model;
+using Krowiorsch.AzureSqlExporter.Model;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json;
 
-namespace Krowiorsch.Impl
+namespace Krowiorsch.AzureSqlExporter.Impl
 {
     public interface IStateStore
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Krowiorsch.Model
+namespace Krowiorsch.AzureSqlExporter.Model
 {
     public class ImportState
     {

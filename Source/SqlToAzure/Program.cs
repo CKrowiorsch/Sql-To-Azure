@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Krowiorsch.AzureSqlExporter.Pipeline;
 using Krowiorsch.Pipeline;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -22,7 +23,15 @@ namespace Krowiorsch
 
             Console.WriteLine($"Azure: {settings.AzureConnection}");
 
-            var pipeline = new ExportToAzure(settings);
+            var pipeline = new ExportToAzurePipeline(new PipelineSettings
+            {
+                AzureConnection = settings.AzureConnection,
+                AzureTableName = settings.AzureTableName,
+                SqlServerConnection = settings.SqlServerConnection,
+                IdColumn = settings.IdColumn,
+                SqlTableName = settings.SqlTableName,
+                TimestampColumn = settings.TimestampColumn
+            });
             pipeline.InitializePipeline(settings.AzureTableName, olderThan).Wait();
             pipeline.Execute().Wait();
         }
