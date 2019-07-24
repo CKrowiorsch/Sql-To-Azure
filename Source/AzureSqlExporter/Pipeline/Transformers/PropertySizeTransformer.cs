@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using Microsoft.WindowsAzure.Storage.Table;
 
-namespace Krowiorsch.Pipeline.Transformers
+namespace Krowiorsch.AzureSqlExporter.Pipeline.Transformers
 {
     public class PropertySizeTransformer
     {
