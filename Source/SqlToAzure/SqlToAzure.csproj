@@ -11,6 +11,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="serilog" Version="2.8.0" />
     <PackageReference Include="serilog.sinks.console" Version="3.1.1" />
+    <PackageReference Include="System.Reactive" Version="4.1.5" />
     <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
   </ItemGroup>
 

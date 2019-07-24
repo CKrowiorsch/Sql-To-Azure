@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reactive.Linq;
 using Krowiorsch.AzureSqlExporter.Pipeline;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -32,7 +33,14 @@ namespace Krowiorsch
                 TimestampColumn = settings.TimestampColumn
             });
             pipeline.InitializePipeline(settings.AzureTableName, olderThan).Wait();
-            pipeline.Execute().Wait();
+
+            var disposable = Observable.Interval(TimeSpan.FromSeconds(30))
+                .Subscribe(_ => pipeline.Execute().Wait());
+
+            Console.WriteLine("to cancel press enter");
+            Console.ReadLine();
+
+            disposable.Dispose();
         }
     }
 }
