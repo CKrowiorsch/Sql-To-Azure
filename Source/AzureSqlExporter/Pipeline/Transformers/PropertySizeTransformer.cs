@@ -21,7 +21,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline.Transformers
             }
         }
 
-        string ShortenString(string input)
+        static string ShortenString(string input)
         {
             if (input.Length <= MaxLength)
                 return input;
