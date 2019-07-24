@@ -109,8 +109,6 @@ UpgradeLog*.XML
 
 #exclude Build-Artifacts
 build/*
-/Source/Oculus.Dashboard/State/StateStore
-
 settings\.json
-
 Source/SqlToAzure/Settings\.cs
+
