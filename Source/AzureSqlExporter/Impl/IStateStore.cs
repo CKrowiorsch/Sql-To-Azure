@@ -74,6 +74,8 @@ namespace Krowiorsch.AzureSqlExporter.Impl
 
             var blobReference = _settingsContainer.GetBlockBlobReference(state.Identifier);
             await blobReference.UploadTextAsync(JsonConvert.SerializeObject(state));
+
+            Serilog.Log.Debug("State aktualisiert");
         }
     }
 }

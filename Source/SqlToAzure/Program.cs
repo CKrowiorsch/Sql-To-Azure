@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using Krowiorsch.AzureSqlExporter.Pipeline;
-using Krowiorsch.Pipeline;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 

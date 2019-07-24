@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 using Krowiorsch.AzureSqlExporter.Helper;
 using Krowiorsch.AzureSqlExporter.Impl;
 using Krowiorsch.AzureSqlExporter.Model;
+using Krowiorsch.AzureSqlExporter.Pipeline.Transformers;
 using Krowiorsch.Impl;
-using Krowiorsch.Pipeline.Transformers;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 
