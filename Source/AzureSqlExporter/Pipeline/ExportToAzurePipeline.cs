@@ -65,7 +65,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
 
             Dictionary<string, object>[] databaseObjects;
             long maxTimestamp;
-            (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState);
+            (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState).ConfigureAwait(false);
             while (databaseObjects.Any())
             {
                 var dynamicObjects = ConvertToDynamic(databaseObjects);         // zu tableentity
