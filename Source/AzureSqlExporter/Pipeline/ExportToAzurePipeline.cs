@@ -49,7 +49,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
             _table = client.GetTableReference(_azureTable);
             await _table.CreateIfNotExistsAsync();
 
-            Serilog.Log.Information("Pipeline für Identifier: {identifier} gestartet", _settings.Identifier);
+            Serilog.Log.Information("Pipeline for Identifier: {identifier} initialized", _settings.Identifier);
 
             _isInitialized = true;
         }
@@ -59,11 +59,11 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
             if (!_isInitialized)
                 throw new InvalidOperationException("Pipeline not initialized yet (call InitializePipeline()");
 
-            Serilog.Log.Debug("Executeing Pipeline");
+            Serilog.Log.Information("Pipeline for Identifier: {identifier} started", _settings.Identifier);
 
             var duration = Stopwatch.StartNew();
 
-            Dictionary<string,object>[] databaseObjects;
+            Dictionary<string, object>[] databaseObjects;
             long maxTimestamp;
             (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState);
             while (databaseObjects.Any())
@@ -137,7 +137,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
                 await _table.ExecuteBatchAsync(operations);
         }
 
-        async Task<(Dictionary<string,object>[], long)> ReadSqlAndConvert(ImportState state)
+        async Task<(Dictionary<string, object>[], long)> ReadSqlAndConvert(ImportState state)
         {
             var statement = SqlBuilder.BuildSelect(_settings.SqlTableName, _settings.TimestampColumn, SqlBatchSize);
 
@@ -155,7 +155,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
             var maxTimestamp = state.LastProcessedPosition;
 
             if (resultsDatabase.Any())
-                maxTimestamp = resultsDatabase.Select(t => (long) t["TimestampAsLong"]).Max();
+                maxTimestamp = resultsDatabase.Select(t => (long)t["TimestampAsLong"]).Max();
 
             return (resultsDatabase, maxTimestamp);
         }
