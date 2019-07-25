@@ -141,7 +141,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
         {
             var statement = SqlBuilder.BuildSelect(_settings.SqlTableName, _settings.TimestampColumn, SqlBatchSize);
 
-            Serilog.Log.Debug("Start Reading from SqlServer");
+            Serilog.Log.Verbose("Start Reading from SqlServer Statement:{statement}", statement);
 
             Dictionary<string, object>[] resultsDatabase;
             using (var connection = new SqlConnection(_settings.SqlServerConnection))
@@ -156,6 +156,8 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
 
             if (resultsDatabase.Any())
                 maxTimestamp = resultsDatabase.Select(t => (long)t["TimestampAsLong"]).Max();
+
+            Serilog.Log.Verbose("Result from SqlServer Count:{count} MaxTS:{maxTS}", resultsDatabase.Length, maxTimestamp);
 
             return (resultsDatabase, maxTimestamp);
         }
