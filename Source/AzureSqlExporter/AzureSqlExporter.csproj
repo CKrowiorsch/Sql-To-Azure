@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Krowiorsch.AzureSqlExporter</RootNamespace>
     <PackageId>Krowiorsch.AzureSqlExporter</PackageId>
-    <Version>0.1.3</Version>
+    <Version>0.1.4</Version>
     <Authors>Christian Krowiorsch</Authors>
     <Company />
     <Product />

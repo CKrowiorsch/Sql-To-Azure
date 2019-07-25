@@ -59,6 +59,8 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
             if (!_isInitialized)
                 throw new InvalidOperationException("Pipeline not initialized yet (call InitializePipeline()");
 
+            Serilog.Log.Debug("Executeing Pipeline");
+
             var duration = Stopwatch.StartNew();
 
             Dictionary<string,object>[] databaseObjects;
@@ -138,6 +140,8 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
         async Task<(Dictionary<string,object>[], long)> ReadSqlAndConvert(ImportState state)
         {
             var statement = SqlBuilder.BuildSelect(_settings.SqlTableName, _settings.TimestampColumn, SqlBatchSize);
+
+            Serilog.Log.Debug("Start Reading from SqlServer");
 
             Dictionary<string, object>[] resultsDatabase;
             using (var connection = new SqlConnection(_settings.SqlServerConnection))
