@@ -19,12 +19,11 @@ namespace Krowiorsch
 
             var settings = Settings.ReadFromFile(filePath);
 
-            var olderThan = DateTime.Today.Subtract(TimeSpan.FromDays(720));
-
             Console.WriteLine($"Azure: {settings.AzureConnection}");
 
             var pipeline = new ExportToAzurePipeline(new PipelineSettings
             {
+                Identifier = settings.Identifier,
                 AzureConnection = settings.AzureConnection,
                 AzureTableName = settings.AzureTableName,
                 SqlServerConnection = settings.SqlServerConnection,
@@ -32,7 +31,7 @@ namespace Krowiorsch
                 SqlTableName = settings.SqlTableName,
                 TimestampColumn = settings.TimestampColumn
             });
-            pipeline.InitializePipeline(settings.AzureTableName, olderThan).Wait();
+            pipeline.InitializePipeline().Wait();
 
             var disposable = Observable.Interval(TimeSpan.FromSeconds(30))
                 .Subscribe(_ => pipeline.Execute().Wait());

@@ -30,6 +30,8 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
         ImportState _currentState;
         CloudTable _table;
 
+        bool _isInitialized;
+
         public ExportToAzurePipeline(PipelineSettings settings)
         {
             _stateStore = new AzureBlobStateStore(settings.AzureConnection);
@@ -39,19 +41,24 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
             _settings = settings;
         }
 
-        public async Task InitializePipeline(string identifier, DateTime olderThan)
+        public async Task InitializePipeline()
         {
-            _currentState = await _stateStore.ByIdentifier(identifier) ?? new ImportState(identifier, olderThan);
+            _currentState = await _stateStore.ByIdentifier(_settings.Identifier) ?? new ImportState(_settings.Identifier);
 
             var client = _storageAccount.CreateCloudTableClient();
             _table = client.GetTableReference(_azureTable);
             await _table.CreateIfNotExistsAsync();
 
-            Serilog.Log.Information("Pipeline für Identifier: {identifier} gestartet", identifier);
+            Serilog.Log.Information("Pipeline für Identifier: {identifier} gestartet", _settings.Identifier);
+
+            _isInitialized = true;
         }
 
         public async Task Execute()
         {
+            if (!_isInitialized)
+                throw new InvalidOperationException("Pipeline not initialized yet (call InitializePipeline()");
+
             var duration = Stopwatch.StartNew();
 
             Dictionary<string,object>[] databaseObjects;

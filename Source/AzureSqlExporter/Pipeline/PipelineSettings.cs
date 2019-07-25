@@ -2,6 +2,8 @@
 {
     public class PipelineSettings
     {
+        public string Identifier { get; set; }
+
         public string AzureConnection { get; set; }
 
         public string AzureTableName { get; set; }
