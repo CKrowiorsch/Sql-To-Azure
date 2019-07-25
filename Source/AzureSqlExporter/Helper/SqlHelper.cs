@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Krowiorsch.AzureSqlExporter.Helper
@@ -77,9 +78,13 @@ namespace Krowiorsch.AzureSqlExporter.Helper
                     if (!reader.HasRows)
                         return new Dictionary<string, object>[0];
 
+                    var columns = Enumerable.Range(0, reader.FieldCount)
+                        .Select(reader.GetName)
+                        .ToArray();
+
                     while (reader.Read())
                     {
-                        results.Add(ReadRow(reader));
+                        results.Add(ReadRow(reader, columns));
                     }
                 }
             }
@@ -87,15 +92,13 @@ namespace Krowiorsch.AzureSqlExporter.Helper
             return results.ToArray();
         }
 
-        static Dictionary<string, object> ReadRow(SqlDataReader reader)
+        static Dictionary<string, object> ReadRow(SqlDataReader reader, string[] columns)
         {
-            var columns = reader.GetColumnSchema();
-
             var result = new Dictionary<string, object>();
 
             foreach (var column in columns)
             {
-                result.Add(column.ColumnName, reader.GetValue(reader.GetOrdinal(column.ColumnName)));
+                result.Add(column, reader.GetValue(reader.GetOrdinal(column)));
             }
 
             return result;
