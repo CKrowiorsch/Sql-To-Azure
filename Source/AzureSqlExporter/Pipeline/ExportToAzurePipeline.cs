@@ -72,11 +72,11 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
 
                 Transform(dynamicObjects);
 
-                await PushToAzure(dynamicObjects);
+                await PushToAzure(dynamicObjects).ConfigureAwait(false);
 
                 _currentState.LastProcessedPosition = maxTimestamp;
 
-                await _stateStore.UpdateImportState(_currentState);
+                await _stateStore.UpdateImportState(_currentState).ConfigureAwait(false);
 
                 Serilog.Log.Information("{count} Entries transferred (Duration: {duration} ms) - TS:{Timestamp}",
                     databaseObjects.Length,
@@ -84,7 +84,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
                     _currentState.LastProcessedPosition);
 
                 duration.Restart();
-                (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState);
+                (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState).ConfigureAwait(false);
             }
 
         }
@@ -108,7 +108,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
             return resultList.ToArray();
         }
 
-        void Transform(DynamicTableEntity[] entities)
+        static void Transform(DynamicTableEntity[] entities)
         {
             var transformer = new PropertySizeTransformer();
 

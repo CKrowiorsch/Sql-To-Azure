@@ -1,6 +1,6 @@
-﻿namespace Krowiorsch
+﻿namespace Krowiorsch.AzureSqlExporter.Impl
 {
-    public static class SqlBuilder
+    internal static class SqlBuilder
     {
         public static string BuildSelect(string tableName, string timestampColumn = "Timestamp", int batchsize = 500)
         {

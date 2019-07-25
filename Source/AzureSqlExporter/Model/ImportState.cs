@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Krowiorsch.AzureSqlExporter.Model
+﻿namespace Krowiorsch.AzureSqlExporter.Model
 {
     public class ImportState
     {
@@ -11,6 +9,6 @@ namespace Krowiorsch.AzureSqlExporter.Model
 
         public string Identifier { get; set; }
 
-        public long LastProcessedPosition { get; set; } = 0L;
+        public long LastProcessedPosition { get; set; }
     }
 }
