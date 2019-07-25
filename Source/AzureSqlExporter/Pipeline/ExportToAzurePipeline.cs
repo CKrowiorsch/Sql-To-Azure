@@ -49,7 +49,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
             _table = client.GetTableReference(_azureTable);
             await _table.CreateIfNotExistsAsync();
 
-            Serilog.Log.Information("Pipeline für Identifier: {identifier} gestartet", _settings.Identifier);
+            Serilog.Log.Information("Pipeline for Identifier: {identifier} initialized", _settings.Identifier);
 
             _isInitialized = true;
         }
@@ -59,9 +59,11 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
             if (!_isInitialized)
                 throw new InvalidOperationException("Pipeline not initialized yet (call InitializePipeline()");
 
+            Serilog.Log.Information("Pipeline for Identifier: {identifier} started", _settings.Identifier);
+
             var duration = Stopwatch.StartNew();
 
-            Dictionary<string,object>[] databaseObjects;
+            Dictionary<string, object>[] databaseObjects;
             long maxTimestamp;
             (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState);
             while (databaseObjects.Any())
@@ -70,11 +72,11 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
 
                 Transform(dynamicObjects);
 
-                await PushToAzure(dynamicObjects);
+                await PushToAzure(dynamicObjects).ConfigureAwait(false);
 
                 _currentState.LastProcessedPosition = maxTimestamp;
 
-                await _stateStore.UpdateImportState(_currentState);
+                await _stateStore.UpdateImportState(_currentState).ConfigureAwait(false);
 
                 Serilog.Log.Information("{count} Entries transferred (Duration: {duration} ms) - TS:{Timestamp}",
                     databaseObjects.Length,
@@ -82,7 +84,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
                     _currentState.LastProcessedPosition);
 
                 duration.Restart();
-                (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState);
+                (databaseObjects, maxTimestamp) = await ReadSqlAndConvert(_currentState).ConfigureAwait(false);
             }
 
         }
@@ -106,7 +108,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
             return resultList.ToArray();
         }
 
-        void Transform(DynamicTableEntity[] entities)
+        static void Transform(DynamicTableEntity[] entities)
         {
             var transformer = new PropertySizeTransformer();
 
@@ -135,9 +137,11 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
                 await _table.ExecuteBatchAsync(operations);
         }
 
-        async Task<(Dictionary<string,object>[], long)> ReadSqlAndConvert(ImportState state)
+        async Task<(Dictionary<string, object>[], long)> ReadSqlAndConvert(ImportState state)
         {
             var statement = SqlBuilder.BuildSelect(_settings.SqlTableName, _settings.TimestampColumn, SqlBatchSize);
+
+            Serilog.Log.Verbose("Start Reading from SqlServer Statement:{statement}", statement);
 
             Dictionary<string, object>[] resultsDatabase;
             using (var connection = new SqlConnection(_settings.SqlServerConnection))
@@ -151,7 +155,9 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
             var maxTimestamp = state.LastProcessedPosition;
 
             if (resultsDatabase.Any())
-                maxTimestamp = resultsDatabase.Select(t => (long) t["TimestampAsLong"]).Max();
+                maxTimestamp = resultsDatabase.Select(t => (long)t["TimestampAsLong"]).Max();
+
+            Serilog.Log.Verbose("Result from SqlServer Count:{count} MaxTS:{maxTS}", resultsDatabase.Length, maxTimestamp);
 
             return (resultsDatabase, maxTimestamp);
         }
