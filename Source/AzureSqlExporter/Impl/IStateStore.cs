@@ -43,7 +43,7 @@ namespace Krowiorsch.AzureSqlExporter.Impl
             using (var stream = await blob.OpenReadAsync())
             using (var streamReader = new StreamReader(stream, Encoding.Default))
             {
-                var jsonData = await streamReader.ReadLineAsync();
+                var jsonData = await streamReader.ReadLineAsync().ConfigureAwait(false);
                 return JsonConvert.DeserializeObject<ImportState>(jsonData);
             }
         }

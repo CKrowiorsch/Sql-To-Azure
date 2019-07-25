@@ -1,2 +1,3 @@
 # Sql-To-Azure
-System to Save Data from MSSQL-Server Table to AzureCloud
+
+Provides a Way to save Data from a MSSQL-Table to an AzureTable. This is internally used to store archieved Data.
