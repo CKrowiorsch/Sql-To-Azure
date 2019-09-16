@@ -19,7 +19,7 @@ namespace Krowiorsch.AzureSqlExporter.Impl
         Task UpdateImportState(ImportState state);
     }
 
-    class AzureBlobStateStore : IStateStore
+    public class AzureBlobStateStore : IStateStore
     {
         readonly CloudBlobContainer _settingsContainer;
 
@@ -75,7 +75,7 @@ namespace Krowiorsch.AzureSqlExporter.Impl
             var blobReference = _settingsContainer.GetBlockBlobReference(state.Identifier);
             await blobReference.UploadTextAsync(JsonConvert.SerializeObject(state));
 
-            Serilog.Log.Debug("State aktualisiert");
+            Serilog.Log.Verbose("State aktualisiert");
         }
     }
 }
