@@ -110,5 +110,5 @@ UpgradeLog*.XML
 #exclude Build-Artifacts
 build/*
 settings\.json
-Source/SqlToAzure/Settings\.cs
+
 
