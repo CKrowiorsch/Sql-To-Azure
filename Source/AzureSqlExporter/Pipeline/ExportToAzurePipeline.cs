@@ -49,7 +49,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
             _table = client.GetTableReference(_azureTable);
             await _table.CreateIfNotExistsAsync();
 
-            Serilog.Log.Information("Pipeline for Identifier: {identifier} initialized", _settings.Identifier);
+            Serilog.Log.Information("Pipeline for Identifier: {Identifier} initialized", _settings.Identifier);
 
             _isInitialized = true;
         }
@@ -59,7 +59,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
             if (!_isInitialized)
                 throw new InvalidOperationException("Pipeline not initialized yet (call InitializePipeline()");
 
-            Serilog.Log.Information("Pipeline for Identifier: {identifier} started", _settings.Identifier);
+            Serilog.Log.Information("Pipeline for Identifier: {Identifier} started", _settings.Identifier);
 
             var duration = Stopwatch.StartNew();
 
@@ -78,7 +78,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
 
                 await _stateStore.UpdateImportState(_currentState).ConfigureAwait(false);
 
-                Serilog.Log.Information("{count} Entries transferred (Duration: {duration} ms) - TS:{Timestamp}",
+                Serilog.Log.Information("{Count} Entries transferred (Duration: {Duration} ms) - TS:{Timestamp}",
                     databaseObjects.Length,
                     duration.ElapsedMilliseconds,
                     _currentState.LastProcessedPosition);
@@ -141,7 +141,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
         {
             var statement = SqlBuilder.BuildSelect(_settings.SqlTableName, _settings.TimestampColumn, SqlBatchSize);
 
-            Serilog.Log.Verbose("Start Reading from SqlServer Statement:{statement}", statement);
+            Serilog.Log.Verbose("Start Reading from SqlServer Statement:{Statement}", statement);
 
             Dictionary<string, object>[] resultsDatabase;
             using (var connection = new SqlConnection(_settings.SqlServerConnection))
@@ -157,7 +157,7 @@ namespace Krowiorsch.AzureSqlExporter.Pipeline
             if (resultsDatabase.Any())
                 maxTimestamp = resultsDatabase.Select(t => (long)t["TimestampAsLong"]).Max();
 
-            Serilog.Log.Verbose("Result from SqlServer Count:{count} MaxTS:{maxTS}", resultsDatabase.Length, maxTimestamp);
+            Serilog.Log.Verbose("Result from SqlServer Count:{Count} MaxTS:{MaxTS}", resultsDatabase.Length, maxTimestamp);
 
             return (resultsDatabase, maxTimestamp);
         }
